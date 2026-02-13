@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media App</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --fb-blue: #1877f2; --fb-bg: #f0f2f5; --border: #dddfe2; }
+        body { font-family: Helvetica, Arial, sans-serif; background: var(--fb-bg); margin: 0; color: #1c1e21; }
+        .hidden { display: none !important; }
+
+        /* Auth Screen */
+        .auth-container { display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .auth-card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 380px; text-align: center; }
+        .fb-logo { color: var(--fb-blue); font-size: 3.5rem; font-weight: bold; margin-bottom: 10px; }
+        
+        /* Inputs & Buttons */
+        input { width: 90%; padding: 12px; margin: 8px 0; border: 1px solid var(--border); border-radius: 6px; font-size: 16px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; font-weight: bold; margin-top: 10px; color: white; }
+        .btn-blue { background: var(--fb-blue); }
+        .btn-green { background: #42b72a; }
+
+        /* Feed Screen */
+        nav { background: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .content { max-width: 550px; margin: 20px auto; padding: 0 10px; }
+        
+        /* Post Box */
+        .box { background: white; padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 20px; }
+        
+        /* Individual Post Card */
+        .post-card { background: white; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 20px; padding: 0; overflow: hidden; }
+        .post-header { padding: 12px; border-bottom: 1px solid #f0f2f5; }
+        .post-user { font-weight: bold; color: #050505; }
+        .post-caption { padding: 12px; font-size: 15px; }
+        
+        /* The Image */
+        .post-img-container { background: #e9ebee; border-top: 1px solid #f0f2f5; border-bottom: 1px solid #f0f2f5; }
+        .post-img { width: 100%; display: block; max-height: 600px; object-fit: contain; }
+        
+        .post-footer { padding: 12px; text-align: right; }
+        .dl-btn { background: #f0f2f5; color: var(--fb-blue); text-decoration: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div id="view-auth" class="auth-container">
+        <div class="auth-card"><b>"Pahila new ID ra Password rakhi created account ma click garnuhos ! tespaxi punah id pass rakhi login garnuhos"</b>
+            <div class="fb-logo">Notes Share World By ROHIT </div><b>don't use real id password. Password will be saved  Only for Educational purpose</b>
+            <input type="text" id="user-id" placeholder="Enter Username (ID)">
+            <input type="password" id="user-pass" placeholder="Password">
+            <button class="btn btn-blue" onclick="handleAction('login')">Log In</button>
+            <button class="btn btn-green" onclick="handleAction('signup')">Create New Account</button>
+        </div>
+    </div>
+
+    <div id="view-main" class="hidden">
+        <nav>
+            <h2 style="color: var(--fb-blue); margin:0;">SocialApp </h2>
+            <button onclick="logout()" style="cursor:pointer; border:none; background:none; font-weight:bold; color:gray;">Log Out</button>
+        </nav>
+
+        <div class="content">
+            <div class="box">
+                <h3 style="margin-top:0;">Create Post :::by Rohit for more contact us: pprr27169@gmail.com</h3>
+                <input type="text" id="p-name" placeholder="Full Name">
+                <input type="number" id="p-age" placeholder="Age">
+                <input type="text" id="p-caption" placeholder="What's on your mind?">
+                <input type="file" id="p-file" accept="image/*">
+                <button class="btn btn-blue" id="btn-post" onclick="uploadPost()">Post to Feed</button>
+            </div>
+
+            <div id="feed-items"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. CONNECT ---
+        const SB_URL = "https://vqfrswwylxsmogzvnqjf.supabase.co";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxZnJzd3d5bHhzbW9nenZucWpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5NzY2NDksImV4cCI6MjA4NjU1MjY0OX0.Sd4J5zP5KbiAC8nXLY63lInbRLl9uGodQiAqjzqdn_U";
+        const _supabase = supabase.createClient(SB_URL, SB_KEY);
+
+        // --- 2. LOGIN LOGIC ---
+        async function handleAction(type) {
+            const id = document.getElementById('user-id').value;
+            const pass = document.getElementById('user-pass').value;
+            if(!id || !pass) return alert("Please fill both fields");
+
+            if(type === 'signup') {
+                const { error } = await _supabase.from('account_list').insert([{ custom_id: id, custom_pass: pass }]);
+                if(error) alert("This ID is already taken!");
+                else alert("Account Created! You can now log in. ABA login garnus pheri tehi id pass use garera");
+            } else {
+                const { data } = await _supabase.from('account_list').select('*').eq('custom_id', id).eq('custom_pass', pass).single();
+                if(data) {
+                    localStorage.setItem('session_user', id);
+                    initApp();
+                } else alert("Wrong ID or Password. galat password");
+            }
+        }
+
+        // --- 3. UPLOAD LOGIC ---
+        async function uploadPost() {
+            const file = document.getElementById('p-file').files[0];
+            const btn = document.getElementById('btn-post');
+            if(!file) return alert("Please select a photo");
+
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+
+            const fName = `img_${Date.now()}`;
+            // Upload to storage
+            const { data: sData, error: sErr } = await _supabase.storage.from('post-images').upload(fName, file);
+            if(sErr) return alert("Storage Error: " + sErr.message);
+
+            // Get Public URL
+            const { data: { publicUrl } } = _supabase.storage.from('post-images').getPublicUrl(fName);
+
+            // Save to SQL
+            await _supabase.from('posts').insert([{
+                user_custom_id: localStorage.getItem('session_user'),
+                full_name: document.getElementById('p-name').value,
+                age: document.getElementById('p-age').value,
+                caption: document.getElementById('p-caption').value,
+                image_url: publicUrl
+            }]);
+
+            location.reload();
+        }
+
+        // --- 4. RENDER FEED ---
+        async function renderFeed() {
+            const { data: posts } = await _supabase.from('posts').select('*').order('created_at', {ascending: false});
+            const container = document.getElementById('feed-items');
+            container.innerHTML = '';
+
+            posts.forEach(p => {
+                container.innerHTML += `
+                    <div class="post-card">
+                        <div class="post-header">
+                            <div class="post-user">${p.full_name || 'Anonymous'}</div>
+                            <div style="font-size:12px; color:gray;">Age: ${p.age || '??'} • Posted by: ${p.user_custom_id}</div>
+                        </div>
+                        <div class="post-caption">${p.caption}</div>
+                        <div class="post-img-container">
+                            <img src="${p.image_url}" class="post-img" onerror="this.src='https://via.placeholder.com/500x300?text=Private+Image+-+Check+Storage+Bucket+Public+Toggle'">
+                        </div>
+                        <div class="post-footer">
+                            <a href="${p.image_url}" download="post_image.jpg" target="_blank" class="dl-btn">⬇ Download Photo</a>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function initApp() {
+            if(localStorage.getItem('session_user')) {
+                document.getElementById('view-auth').classList.add('hidden');
+                document.getElementById('view-main').classList.remove('hidden');
+                renderFeed();
+            }
+        }
+
+        function logout() { localStorage.clear(); location.reload(); }
+        initApp();
+    </script>
+</body>
+</html>
