@@ -40,6 +40,81 @@
         
         .post-footer { padding: 12px; text-align: right; }
         .dl-btn { background: #f0f2f5; color: var(--fb-blue); text-decoration: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; font-size: 14px; }
+
+        /* PREMIUM TRIGGER BUTTON */
+    .btn-premium-trigger {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #ffd700, #ff8c00);
+        border: none;
+        border-radius: 10px;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 15px;
+        box-shadow: 0 4px 15px rgba(255, 140, 0, 0.3);
+        transition: transform 0.2s;
+    }
+    .btn-premium-trigger:hover { transform: scale(1.02); }
+
+    /* MODAL ANIMATION */
+    .modal-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.7);
+        backdrop-filter: blur(8px);
+        display: flex; justify-content: center; align-items: center;
+        z-index: 2000; opacity: 0; pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+    .modal-content {
+        background: #ffffff;
+        width: 90%; max-width: 420px;
+        border-radius: 24px;
+        padding: 30px;
+        position: relative;
+        transform: translateY(40px);
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .modal-overlay.active .modal-content { transform: translateY(0); }
+
+    .close-x { position: absolute; top: 20px; right: 20px; border: none; background: none; font-size: 28px; color: #ccc; cursor: pointer; }
+
+    /* ITEM CARDS */
+    .modal-header h2 { margin: 0; color: #1c1e21; }
+    .modal-header p { color: #65676b; margin-top: 5px; margin-bottom: 25px; }
+
+    .item-card {
+        background: #f7f8fa;
+        border: 1px solid #e4e6eb;
+        border-radius: 16px;
+        padding: 15px;
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 12px;
+    }
+    .item-info h3 { margin: 5px 0; font-size: 16px; }
+    .price { color: #00a400; font-weight: bold; margin: 0; }
+    
+    .badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; font-weight: bold; }
+    .badge.yellow { background: #fff3cd; color: #856404; }
+    .badge.blue { background: #e7f3ff; color: #1877f2; }
+
+    .buy-now {
+        background: #1877f2; color: white; border: none;
+        padding: 8px 18px; border-radius: 8px; font-weight: bold; cursor: pointer;
+    }
+
+    /* PAYMENT SECTION */
+    .payment-drawer {
+        margin-top: 20px; padding-top: 20px; border-top: 2px dashed #ddd; text-align: center;
+    }
+    .pay-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .esewa-btn { background: #60bb46; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+    .cash-btn { background: #000; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+    
+    .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -68,6 +143,57 @@
                 <input type="text" id="p-caption" placeholder="What's on your mind?">
                 <input type="file" id="p-file" accept="image/*">
                 <button class="btn btn-blue" id="btn-post" onclick="uploadPost()">Post to Feed</button>
+<button class="btn-premium-trigger" onclick="openPremium()">
+    ⭐ Unlock Premium Notes
+</button>
+
+<div id="premium-modal" class="modal-overlay" onclick="closePremium(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <button class="close-x" onclick="closePremium(null, true)">&times;</button>
+        
+        <div class="modal-header">
+            <h2>Premium Store</h2>
+            <p>Ace your exams with our expert notes.</p>
+        </div>
+
+        <div class="notes-container">
+            <div class="item-card">
+                <div class="item-info">
+                    <span class="badge yellow">Most Popular</span>
+                    <h3>Social Project Notes</h3>
+                    <p class="price">Rs. 150</p>
+                </div>
+                <button class="buy-now" onclick="selectItem('Social Project', 150)">Buy</button>
+            </div>
+
+            <div class="item-card">
+                <div class="item-info">
+                    <h3>English Notes</h3>
+                    <p class="price">Rs. 100</p>
+                </div>
+                <button class="buy-now" onclick="selectItem('English', 100)">Buy</button>
+            </div>
+
+            <div class="item-card">
+                <div class="item-info">
+                    <span class="badge blue">Best Value</span>
+                    <h3>Economics Specification</h3>
+                    <p class="price">Rs. 200</p>
+                </div>
+                <button class="buy-now" onclick="selectItem('Economics', 200)">Buy</button>
+            </div>
+        </div>
+
+        <div id="payment-drawer" class="payment-drawer hidden">
+            <p>Pay <strong>Rs. <span id="m-price">0</span></strong> for <strong id="m-sub">...</strong></p>
+            <div class="pay-btns">
+                <button class="esewa-btn" onclick="generateVoucherImage('eSewa')">eSewa Method</button>
+                <button class="cash-btn" onclick="generateVoucherImage('Cash')">Cash Payment</button>
+            </div>
+        </div>
+    </div>
+</div>
+                
             </div>
 
             <div id="feed-items"></div>
@@ -75,6 +201,102 @@
     </div>
 
     <script>
+
+
+        let selectedSub = "";
+let selectedPrice = 0;
+
+function openPremium() {
+    document.getElementById('premium-modal').classList.add('active');
+}
+
+function closePremium(e, force = false) {
+    if (force || e.target.classList.contains('modal-overlay')) {
+        document.getElementById('premium-modal').classList.remove('active');
+        document.getElementById('payment-drawer').classList.add('hidden');
+    }
+}
+
+function selectItem(sub, price) {
+    selectedSub = sub;
+    selectedPrice = price;
+    document.getElementById('m-sub').innerText = sub;
+    document.getElementById('m-price').innerText = price;
+    document.getElementById('payment-drawer').classList.remove('hidden');
+}
+
+function generateVoucherImage(method) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 600;
+    canvas.height = 800;
+
+    // --- DRAWING THE VOUCHER ---
+    // Background
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Header Color (Green for eSewa, Black for Cash)
+    ctx.fillStyle = (method === 'eSewa') ? "#60bb46" : "#1c1e21";
+    ctx.fillRect(0, 0, canvas.width, 100);
+
+    // Header Title
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 30px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("PAYMENT VOUCHER", canvas.width/2, 60);
+
+    // Subject & Price
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#333333";
+    ctx.font = "bold 28px Arial";
+    ctx.fillText("ITEM: " + selectedSub, 50, 180);
+    
+    ctx.fillStyle = "#d63031";
+    ctx.fillText("TOTAL: Rs. " + selectedPrice, 50, 230);
+
+    // Details Box
+    ctx.strokeStyle = "#dddddd";
+    ctx.strokeRect(40, 280, 520, 350);
+
+    ctx.fillStyle = "#555555";
+    ctx.font = "20px Arial";
+    let instructions = [
+        "METHOD: " + method,
+        "USER ID: " + (localStorage.getItem('session_user') || "Guest"),
+        "DATE: " + new Date().toLocaleDateString(),
+        "",
+        "HOW TO COMPLETE PURCHASE:",
+        "1. Pay Rs. " + selectedPrice + " contact: pprr27169@gmail.com",
+        "2. After payment Save this image for proof.",
+        "3. Email this image to:pprr27169@gmail.com",
+        "4. PDF or Notes will arrive in your email within 24hrs."
+    ];
+
+    let yPos = 330;
+    instructions.forEach(line => {
+        ctx.fillText(line, 60, yPos);
+        yPos += 40;
+    });
+
+    // Footer
+    ctx.fillStyle = "#f1f2f6";
+    ctx.fillRect(0, 720, canvas.width, 80);
+    ctx.fillStyle = "#777777";
+    ctx.font = "italic 16px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("This is a generated student project receipt.", canvas.width/2, 765);
+
+    // --- TRIGGER DOWNLOAD ---
+    const imageURL = canvas.toDataURL("image/png");
+    const link = document.createElement('a');
+    link.href = imageURL;
+    link.download = `Voucher_${selectedSub}_${method}.png`;
+    link.click();
+
+    alert("✅ Voucher Image Saved! Open your gallery to see it.");
+    closePremium(null, true);
+}
         // --- 1. CONNECT ---
         const SB_URL = "https://suthukshqcpqitoymycc.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1dGh1a3NocWNwcWl0b3lteWNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwNjk2ODIsImV4cCI6MjA4NjY0NTY4Mn0.EwqedOkvL10MMSKg2bv6OhEeyUiUgrG6fHWK7RMPNVE";
@@ -166,3 +388,4 @@
 </body>
 
 </html>
+
