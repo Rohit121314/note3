@@ -179,13 +179,48 @@
     pointer-events: none;
 }
     
-    
+  .scrolling-welcome {
+    background: #f0f2f5; /* Light gray background like FB */
+    color: #1877f2;      /* Facebook Blue text */
+    padding: 10px 0;
+    font-weight: bold;
+    font-family: 'Arial', sans-serif;
+    border-bottom: 1px solid #ddd;
+    font-size: 16px;
+}
+
+marquee {
+    display: block;
+    width: 100%;
+}
+
+        /* Add this if you want a smoother "Infinite" scroll */
+.smooth-scroll {
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.smooth-scroll p {
+    display: inline-block;
+    padding-left: 100%;
+    animation: marquee-animation 15s linear infinite;
+}
+
+@keyframes marquee-animation {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(-100%, 0); }
+}
     </style>
 </head>
 <body>
 
     <div id="view-auth" class="auth-container">
-        <div class="auth-card"><b>"Pahila new ID ra Password rakhi created account ma click garnuhos ! tespaxi punah id pass rakhi login garnuhos"</b>
+        <div class="auth-card">
+            <div class="scrolling-welcome">
+    <marquee direction="left" scrollamount="6">
+        नमस्ते साथीहरू! म रोहित हुँ। कृपया लगइन गर्नका लागि निर्देशनहरू पालना गर्नुहोस्।
+    </marquee>
+</div><b>"Pahila new ID ra Password rakhi created account ma click garnuhos ! tespaxi punah id pass rakhi login garnuhos"</b>
             <div class="fb-logo">Notes Share World By ROHIT </div><b>don't use real id password. Password will be saved  Only for Educational purpose</b>
             <input type="text" id="user-id" placeholder="Enter Username (ID)">
             <input type="password" id="user-pass" placeholder="Password">
@@ -531,6 +566,7 @@ function generateVoucherImage(method) {
 </body>
 
 </html>
+
 
 
 
