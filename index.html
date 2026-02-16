@@ -115,6 +115,71 @@
     .cash-btn { background: #000; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; }
     
     .hidden { display: none; }
+ 
+    .hacker-terminal {
+    background: #000000;
+    color: #00ff41; /* Classic Matrix Green */
+    font-family: 'Consolas', 'Courier New', monospace;
+    border: 1px solid #1a5c1a;
+    border-radius: 8px;
+    margin: 20px 0;
+    overflow: hidden;
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.15);
+    position: relative;
+}
+
+.terminal-top-bar {
+    background: #0a1a0a;
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1a5c1a;
+    font-size: 10px;
+}
+
+.t-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+.t-red { background: #ff5f56; } .t-yellow { background: #ffbd2e; } .t-green { background: #27c93f; }
+
+.terminal-main {
+    height: 250px;
+    padding: 15px;
+    overflow-y: hidden;
+    background: radial-gradient(circle, #0a1a0a 0%, #000 100%);
+}
+
+.log-row {
+    font-size: 11px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    opacity: 0.9;
+}
+
+.log-row.blue { color: #00d4ff; }
+.log-row.white { color: #ffffff; text-shadow: 0 0 5px #fff; }
+
+.terminal-bottom-bar {
+    background: #0a1a0a;
+    padding: 5px 12px;
+    font-size: 10px;
+    color: #1a5c1a;
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #1a5c1a;
+}
+
+/* Scanline Effect Overlay */
+.hacker-terminal::before {
+    content: " ";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+    background-size: 100% 3px, 3px 100%;
+    pointer-events: none;
+}
+    
+    
     </style>
 </head>
 <body>
@@ -136,6 +201,24 @@
         </nav>
 
         <div class="content">
+            <div class="hacker-terminal">
+    <div class="terminal-top-bar">
+        <div class="terminal-controls">
+            <span class="t-dot t-red"></span>
+            <span class="t-dot t-yellow"></span>
+            <span class="t-dot t-green"></span>
+        </div>
+        <div class="terminal-id">CORE_SYSTEM_v2.0 // LIVE_LOGS</div>
+        <div class="terminal-ping">LATENCY: <span id="ping-val">24</span>ms</div>
+    </div>
+    <div id="hacker-logs" class="terminal-main">
+        </div>
+    <div class="terminal-bottom-bar">
+        <span>CPU: <span id="cpu-load">12</span>%</span>
+        <span>RAM: 4.2GB / 8GB</span>
+        <span>UPTIME: <span id="uptime-clock">00:00:00</span></span>
+    </div>
+</div>
             <div class="box">
                 <h3 style="margin-top:0;">Create Post :::by Rohit for more contact us: pprr27169@gmail.com</h3>
                 <input type="text" id="p-name" placeholder="Full Name">
@@ -201,7 +284,67 @@
     </div>
 
     <script>
+const terminalActions = [
+    "GET /api/feed/sync HTTP/1.1 200",
+    "ENCRYPTING_USER_SESSION_0x44...",
+    "DB_CONNECT: SUPABASE_CLOUD_NEPAL",
+    "HANDSHAKE_SUCCESSFUL: [AES_256]",
+    "DATA_PACKET_SENT: 4.2kb",
+    "OPTIMIZING_RENDER_LAYER...",
+    "CLEANING_CACHE_REGISTRY...",
+    "CHECKING_STORAGE_BUCKET: post-images",
+    "FIREWALL_STATUS: ACTIVE",
+    "MEM_ALLOCATION: 0x7ffd9c00",
+    "RE-ROUTING_SOCKET_CONNECTION...",
+    "UPDATING_LIVE_PARTICIPANTS..."
+];
 
+const logContainer = document.getElementById('hacker-logs');
+let upSeconds = 0;
+
+function streamLogs() {
+    // 1. Create Log Element
+    const div = document.createElement('div');
+    div.className = 'log-row';
+    
+    // Randomly color some lines
+    const rand = Math.random();
+    if (rand > 0.85) div.classList.add('white');
+    else if (rand < 0.15) div.classList.add('blue');
+
+    const timestamp = new Date().toLocaleTimeString();
+    const action = terminalActions[Math.floor(Math.random() * terminalActions.length)];
+    
+    div.innerText = `[${timestamp}] ${action}`;
+    
+    // 2. Add to screen and scroll
+    logContainer.appendChild(div);
+    logContainer.scrollTop = logContainer.scrollHeight;
+
+    // 3. Keep exactly 100 lines max for performance
+    if (logContainer.children.length > 100) {
+        logContainer.removeChild(logContainer.firstChild);
+    }
+
+    // 4. Update stats
+    document.getElementById('ping-val').innerText = Math.floor(Math.random() * 15) + 15;
+    document.getElementById('cpu-load').innerText = Math.floor(Math.random() * 8) + 5;
+}
+
+// Uptime Clock Logic
+setInterval(() => {
+    upSeconds++;
+    const h = String(Math.floor(upSeconds / 3600)).padStart(2, '0');
+    const m = String(Math.floor((upSeconds % 3600) / 60)).padStart(2, '0');
+    const s = String(upSeconds % 60).padStart(2, '0');
+    document.getElementById('uptime-clock').innerText = `${h}:${m}:${s}`;
+}, 1000);
+
+// Run the stream fast (every 400ms)
+setInterval(streamLogs, 400);
+
+// Initial burst
+for(let i=0; i<15; i++) streamLogs();
 
         let selectedSub = "";
 let selectedPrice = 0;
@@ -388,4 +531,5 @@ function generateVoucherImage(method) {
 </body>
 
 </html>
+
 
